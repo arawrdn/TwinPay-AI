@@ -33,6 +33,8 @@ import {
   signInAnonymously, 
   onAuthStateChanged, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   User as FirebaseUser
 } from "firebase/auth";
@@ -284,13 +286,44 @@ function AppContent() {
     return () => clearTimeout(timeout);
   }, [profile, user, isReady]);
 
+  // Handle redirect result
+  useEffect(() => {
+    getRedirectResult(auth).then((result) => {
+      if (result) {
+        addLog("[AUTH] Signed in via redirect.");
+      }
+    }).catch((e) => {
+      console.error("Auth redirect error", e);
+    });
+  }, []);
+
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
+    addLog("[AUTH] Starting Google Login...");
     try {
-      await signInWithPopup(auth, provider);
-      addLog("[AUTH] Signed in with Google.");
-    } catch (e) {
-      addLog(`[AUTH] Login failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      // In some mobile wallets/iframes, popup is completely blocked.
+      // We try popup first as it's better UX for those who can use it.
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        addLog(`[AUTH] Signed in as ${result.user.displayName || 'User'}`);
+      }
+    } catch (e: any) {
+      console.error("Login error", e);
+      if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || e.code === 'auth/internal-error') {
+        addLog("[AUTH] Popup failed/blocked. Attempting Redirect...");
+        try {
+          await signInWithRedirect(auth, provider);
+        } catch (redirectErr: any) {
+          addLog(`[AUTH] Redirect failed: ${redirectErr.message}`);
+          // Last resort: Anonymous
+          signInAnonymously(auth).catch(err => addLog(`[AUTH] Anonymous failed: ${err.message}`));
+        }
+      } else if (e.message?.includes("Authorized Domain") || e.code === 'auth/unauthorized-domain') {
+        addLog("[ERROR] Domain not authorized in Firebase Console.");
+        addLog("[HELP] Add this domain to 'Authorized domains' in Firebase Authentication settings.");
+      } else {
+        addLog(`[AUTH] Login failed: ${e.message}`);
+      }
     }
   };
 
@@ -629,24 +662,24 @@ function AppContent() {
       </nav>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* TOP STATUS BAR */}
-        <header className="h-16 border-b border-line px-8 flex items-center justify-between bg-[#0F121A] shrink-0 relative z-[100]">
+        <header className="h-16 border-b border-line px-8 flex items-center justify-between bg-[#0F121A] shrink-0 sticky top-0 z-[100] w-full">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-               <div className="w-9 h-9 bg-celo-green rounded-xl flex items-center justify-center font-black text-ink text-xl shadow-[0_0_15px_rgba(53,208,127,0.25)] pointer-events-none">T</div>
+               <div className="w-9 h-9 bg-celo-green rounded-xl flex items-center justify-center font-black text-ink text-xl shadow-[0_0_15px_rgba(53,208,127,0.25)]">T</div>
                <div className="flex flex-col">
                  <h1 className="text-sm font-black uppercase italic tracking-tighter leading-none">TwinPay AI</h1>
                </div>
             </div>
             
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 pointer-events-none">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
                <ShieldCheck className="w-3 h-3 text-celo-green" />
                <span className="text-[9px] font-bold text-ghost uppercase tracking-wider">Secure Celo Protocol</span>
             </div>
           </div>
           
-          <div className="flex items-center gap-4 relative z-[110]">
+          <div className="flex items-center gap-4">
              {user && !user.isAnonymous ? (
                <div className="flex items-center gap-3">
                   <div className="text-right hidden sm:block">
@@ -660,8 +693,12 @@ function AppContent() {
                     referrerPolicy="no-referrer"
                   />
                   <button 
-                    onClick={() => auth.signOut()}
-                    className="text-ghost hover:text-red-400 p-2 cursor-pointer pointer-events-auto"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      auth.signOut().then(() => addLog("[AUTH] Signed out."));
+                    }}
+                    className="text-ghost hover:text-red-400 p-2 cursor-pointer transition-colors"
                     title="Sign Out"
                     type="button"
                   >
@@ -672,19 +709,30 @@ function AppContent() {
                <button 
                 onClick={handleLogin}
                 type="button"
-                className="flex items-center gap-2 px-4 h-8 bg-surface-bright hover:bg-white/10 border border-line rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all cursor-pointer pointer-events-auto"
+                className="flex items-center gap-2 px-4 h-8 bg-surface-bright hover:bg-white/10 border border-line rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all cursor-pointer"
                >
                  Sign in
                </button>
              )}
-
+ 
              <div className="h-4 w-[1px] bg-line"></div>
-
+ 
              {isConnected ? (
                <button 
-                onClick={() => disconnect()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  try {
+                    disconnect();
+                    addLog("[WALLET] Requesting disconnect...");
+                  } catch (err: any) {
+                    addLog(`[ERROR] Disconnect failed: ${err.message}`);
+                    // Fallback: clear address locally if wagmi is stuck
+                    addLog("[WALLET] Try refreshing if still stuck.");
+                  }
+                }}
                 type="button"
-                className="flex items-center gap-2 px-4 h-9 bg-line hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer pointer-events-auto"
+                className="flex items-center gap-2 px-4 h-9 bg-line hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
                >
                  <Power className="w-3 h-3" />
                  Disconnect
@@ -694,12 +742,15 @@ function AppContent() {
                  {connectors.map((connector) => (
                    <button 
                     key={connector.uid}
-                    onClick={() => connect({ connector })}
+                    onClick={() => {
+                      addLog(`[WALLET] Connecting to ${connector.name}...`);
+                      connect({ connector });
+                    }}
                     type="button"
-                    className="flex items-center gap-2 px-4 h-9 bg-white text-ink rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-celo-green transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] cursor-pointer pointer-events-auto"
+                    className="flex items-center gap-2 px-4 h-9 bg-white text-ink rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-celo-green transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] cursor-pointer"
                    >
                      <Wallet className="w-3 h-3" />
-                     Connect MiniPay
+                     {connector.name === "Injected" ? "Connect Wallet" : connector.name}
                    </button>
                  ))}
                </div>
@@ -715,7 +766,7 @@ function AppContent() {
         </header>
 
         {/* CONTENT SCROLL AREA */}
-        <div className="flex-1 overflow-y-auto p-8 relative">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
           <div className="max-w-6xl mx-auto space-y-8">
              {activeView === "history" ? (
                 <HistoryView history={history} />

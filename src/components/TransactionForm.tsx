@@ -53,8 +53,8 @@ export default function TransactionForm({ onSubmit, isLoading }: TransactionForm
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 relative z-20">
-            <div className="relative pointer-events-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className="block text-[10px] uppercase text-muted font-bold mb-2 tracking-widest pl-1">Amount</label>
               <div className="relative">
                 <span className="absolute left-4 top-4 text-gray-700 font-mono text-sm">$</span>
@@ -63,23 +63,29 @@ export default function TransactionForm({ onSubmit, isLoading }: TransactionForm
                   required
                   step="0.01"
                   placeholder="0.00"
-                  className="w-full bg-ink border border-line p-4 pl-8 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm placeholder:text-gray-700 pointer-events-auto"
+                  className="w-full bg-ink border border-line p-4 pl-8 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm placeholder:text-gray-700"
                   onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                 />
               </div>
             </div>
-            <div className="relative pointer-events-auto">
+            <div>
               <label className="block text-[10px] uppercase text-muted font-bold mb-2 tracking-widest pl-1">Asset</label>
-              <select 
-                className="w-full bg-ink border border-line p-4 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm cursor-pointer pointer-events-auto relative z-30"
-                value={formData.token}
-                onChange={e => setFormData({ ...formData, token: e.target.value as TransactionToken })}
-              >
-                <option value="CELO">CELO</option>
-                <option value="cUSD">cUSD</option>
-                <option value="cEUR">cEUR</option>
-                <option value="USDT">USDT</option>
-              </select>
+              <div className="grid grid-cols-2 gap-2">
+                {(['CELO', 'cUSD', 'cEUR', 'USDT'] as TransactionToken[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, token: t })}
+                    className={`px-3 py-3 rounded-lg border text-xs font-mono transition-all ${
+                      formData.token === t 
+                        ? "bg-celo-green/10 border-celo-green text-celo-green" 
+                        : "bg-ink border-line text-ghost hover:border-ghost/30"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

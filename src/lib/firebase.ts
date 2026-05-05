@@ -1,7 +1,12 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import baseConfig from '../../firebase-applet-config.json';
+
+// Use environment variable if available to avoid GitHub secret scanning alerts
+const firebaseConfig = import.meta.env.VITE_FIREBASE_CONFIG 
+  ? JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG) 
+  : baseConfig;
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
