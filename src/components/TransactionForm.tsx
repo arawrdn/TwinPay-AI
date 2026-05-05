@@ -53,8 +53,8 @@ export default function TransactionForm({ onSubmit, isLoading }: TransactionForm
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-2 gap-4 relative z-20">
+            <div className="relative pointer-events-auto">
               <label className="block text-[10px] uppercase text-muted font-bold mb-2 tracking-widest pl-1">Amount</label>
               <div className="relative">
                 <span className="absolute left-4 top-4 text-gray-700 font-mono text-sm">$</span>
@@ -63,22 +63,22 @@ export default function TransactionForm({ onSubmit, isLoading }: TransactionForm
                   required
                   step="0.01"
                   placeholder="0.00"
-                  className="w-full bg-ink border border-line p-4 pl-8 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm placeholder:text-gray-700"
+                  className="w-full bg-ink border border-line p-4 pl-8 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm placeholder:text-gray-700 pointer-events-auto"
                   onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                 />
               </div>
             </div>
-            <div>
+            <div className="relative pointer-events-auto">
               <label className="block text-[10px] uppercase text-muted font-bold mb-2 tracking-widest pl-1">Asset</label>
               <select 
-                className="w-full bg-ink border border-line p-4 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm appearance-none cursor-pointer"
+                className="w-full bg-ink border border-line p-4 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm cursor-pointer pointer-events-auto relative z-30"
                 value={formData.token}
                 onChange={e => setFormData({ ...formData, token: e.target.value as TransactionToken })}
               >
-                <option value="CELO">CELO (Native)</option>
-                <option value="cUSD">cUSD (Celo Dollar)</option>
-                <option value="cEUR">cEUR (Celo Euro)</option>
-                <option value="USDT">USDT (Tether Celo)</option>
+                <option value="CELO">CELO</option>
+                <option value="cUSD">cUSD</option>
+                <option value="cEUR">cEUR</option>
+                <option value="USDT">USDT</option>
               </select>
             </div>
           </div>

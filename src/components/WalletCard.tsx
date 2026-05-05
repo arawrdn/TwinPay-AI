@@ -10,9 +10,12 @@ import { UserProfile } from "../types";
 interface WalletCardProps {
   profile: UserProfile;
   address: string;
+  celoPrice: number;
 }
 
-export default function WalletCard({ profile, address }: WalletCardProps) {
+export default function WalletCard({ profile, address, celoPrice }: WalletCardProps) {
+  const celoUsdValue = profile.current_balance * celoPrice;
+
   return (
     <div className="bg-surface border border-line rounded-2xl p-6">
       <div className="flex justify-between items-start mb-6">
@@ -24,20 +27,20 @@ export default function WalletCard({ profile, address }: WalletCardProps) {
       
       <div className="space-y-4">
         <div className="flex justify-between items-center group">
-          <span className="text-sm text-ghost group-hover:text-white transition-colors">CELO (Native)</span>
-          <span className="text-sm font-bold tracking-tight font-mono text-celo-gold">{(profile.current_balance).toLocaleString(undefined, { minimumFractionDigits: 4 })}</span>
+          <div className="flex flex-col">
+            <span className="text-sm text-ghost group-hover:text-white transition-colors">CELO (Native)</span>
+            <span className="text-[9px] text-muted font-mono">${celoPrice.toFixed(4)} / CELO</span>
+          </div>
+          <div className="text-right">
+            <div className="text-sm font-bold tracking-tight font-mono text-celo-gold">{(profile.current_balance).toLocaleString(undefined, { minimumFractionDigits: 4 })}</div>
+            <div className="text-[10px] text-muted font-mono italic">${celoUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+          </div>
         </div>
-        <div className="flex justify-between items-center group">
+        
+        {/* We'll keep these static for now, as user specifically asked for Native real-time price */}
+        <div className="flex justify-between items-center group opacity-50">
           <span className="text-sm text-ghost group-hover:text-white transition-colors">cUSD (MiniPay)</span>
-          <span className="text-sm font-bold tracking-tight font-mono">{(profile.current_balance * 0.7).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-        </div>
-        <div className="flex justify-between items-center group">
-          <span className="text-sm text-ghost group-hover:text-white transition-colors">USDT</span>
-          <span className="text-sm font-bold tracking-tight font-mono">{(profile.current_balance * 0.2).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-        </div>
-        <div className="flex justify-between items-center group">
-          <span className="text-sm text-ghost group-hover:text-white transition-colors">cEUR</span>
-          <span className="text-sm font-bold tracking-tight font-mono">{(profile.current_balance * 0.1).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+          <span className="text-sm font-bold tracking-tight font-mono">0.00</span>
         </div>
         
         <div className="h-[1px] bg-line my-4"></div>
@@ -45,7 +48,7 @@ export default function WalletCard({ profile, address }: WalletCardProps) {
         <div className="flex justify-between items-center pt-2">
           <span className="text-xs font-bold uppercase tracking-widest text-[#F4F4F7]">Net Balance</span>
           <span className="text-lg font-bold text-celo-green font-mono">
-            ${profile.current_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            ${celoUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </span>
         </div>
       </div>

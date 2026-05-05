@@ -183,6 +183,27 @@ function AppContent() {
     }
   }, [balanceData, isConnected]);
 
+  const [celoPrice, setCeloPrice] = useState<number>(0.85); // Default fallback
+
+  // Fetch CELO Price
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=celo&vs_currencies=usd');
+        const data = await response.json();
+        if (data.celo && data.celo.usd) {
+          setCeloPrice(data.celo.usd);
+          addLog(`[MARKET] CELO Price updated: $${data.celo.usd}`);
+        }
+      } catch (e) {
+        console.error("Failed to fetch price", e);
+      }
+    };
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isAuditing, setIsAuditing] = useState(false);
@@ -610,22 +631,22 @@ function AppContent() {
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* TOP STATUS BAR */}
-        <header className="h-16 border-b border-line px-8 flex items-center justify-between bg-[#0F121A] shrink-0">
+        <header className="h-16 border-b border-line px-8 flex items-center justify-between bg-[#0F121A] shrink-0 relative z-[100]">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-               <div className="w-9 h-9 bg-celo-green rounded-xl flex items-center justify-center font-black text-ink text-xl shadow-[0_0_15px_rgba(53,208,127,0.25)]">T</div>
+               <div className="w-9 h-9 bg-celo-green rounded-xl flex items-center justify-center font-black text-ink text-xl shadow-[0_0_15px_rgba(53,208,127,0.25)] pointer-events-none">T</div>
                <div className="flex flex-col">
                  <h1 className="text-sm font-black uppercase italic tracking-tighter leading-none">TwinPay AI</h1>
                </div>
             </div>
             
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 pointer-events-none">
                <ShieldCheck className="w-3 h-3 text-celo-green" />
                <span className="text-[9px] font-bold text-ghost uppercase tracking-wider">Secure Celo Protocol</span>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 relative z-[110]">
              {user && !user.isAnonymous ? (
                <div className="flex items-center gap-3">
                   <div className="text-right hidden sm:block">
@@ -640,8 +661,9 @@ function AppContent() {
                   />
                   <button 
                     onClick={() => auth.signOut()}
-                    className="text-ghost hover:text-red-400 p-2"
+                    className="text-ghost hover:text-red-400 p-2 cursor-pointer pointer-events-auto"
                     title="Sign Out"
+                    type="button"
                   >
                     <Power className="w-4 h-4" />
                   </button>
@@ -649,7 +671,8 @@ function AppContent() {
              ) : (
                <button 
                 onClick={handleLogin}
-                className="flex items-center gap-2 px-4 h-8 bg-surface-bright hover:bg-white/10 border border-line rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all"
+                type="button"
+                className="flex items-center gap-2 px-4 h-8 bg-surface-bright hover:bg-white/10 border border-line rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all cursor-pointer pointer-events-auto"
                >
                  Sign in
                </button>
@@ -660,7 +683,8 @@ function AppContent() {
              {isConnected ? (
                <button 
                 onClick={() => disconnect()}
-                className="flex items-center gap-2 px-4 h-9 bg-line hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all"
+                type="button"
+                className="flex items-center gap-2 px-4 h-9 bg-line hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer pointer-events-auto"
                >
                  <Power className="w-3 h-3" />
                  Disconnect
@@ -671,7 +695,8 @@ function AppContent() {
                    <button 
                     key={connector.uid}
                     onClick={() => connect({ connector })}
-                    className="flex items-center gap-2 px-4 h-9 bg-white text-ink rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-celo-green transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                    type="button"
+                    className="flex items-center gap-2 px-4 h-9 bg-white text-ink rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-celo-green transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] cursor-pointer pointer-events-auto"
                    >
                      <Wallet className="w-3 h-3" />
                      Connect MiniPay
@@ -745,6 +770,7 @@ function AppContent() {
                      <WalletCard 
                        profile={profile} 
                        address={address || "0x0000...0000"} 
+                       celoPrice={celoPrice}
                      />
 
                      <div className="bg-surface border border-line rounded-2xl p-6">
