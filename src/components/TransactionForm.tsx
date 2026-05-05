@@ -1,0 +1,130 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState } from "react";
+import { motion } from "motion/react";
+import { ShoppingCart, Send, ArrowRight } from "lucide-react";
+import { TransactionInput, TransactionToken } from "../types";
+
+interface TransactionFormProps {
+  onSubmit: (tx: TransactionInput) => void;
+  isLoading: boolean;
+}
+
+export default function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
+  const [formData, setFormData] = useState<Partial<TransactionInput>>({
+    token: 'cUSD',
+    category: 'Shopping',
+    item: '',
+    recipient: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.item && formData.price && formData.recipient) {
+      onSubmit(formData as TransactionInput);
+    }
+  };
+
+  return (
+    <motion.form 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      onSubmit={handleSubmit}
+      className="bg-surface border border-line rounded-2xl overflow-hidden shadow-2xl flex flex-col h-full"
+    >
+      <div className="p-5 border-b border-line bg-surface-bright flex justify-between items-center">
+        <h2 className="text-sm font-bold uppercase tracking-wide">Propose Transaction</h2>
+        <ShoppingCart className="w-4 h-4 text-ghost opacity-30" />
+      </div>
+
+      <div className="p-8 flex-1 space-y-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[10px] uppercase text-muted font-bold mb-2 tracking-widest pl-1">Description</label>
+            <input 
+              type="text" 
+              required
+              placeholder="e.g. buy coffee at 7-Eleven"
+              className="w-full bg-ink border border-line p-4 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm placeholder:text-gray-700 transition-colors"
+              onChange={e => setFormData({ ...formData, item: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] uppercase text-muted font-bold mb-2 tracking-widest pl-1">Amount</label>
+              <div className="relative">
+                <span className="absolute left-4 top-4 text-gray-700 font-mono text-sm">$</span>
+                <input 
+                  type="number" 
+                  required
+                  step="0.01"
+                  placeholder="0.00"
+                  className="w-full bg-ink border border-line p-4 pl-8 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm placeholder:text-gray-700"
+                  onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase text-muted font-bold mb-2 tracking-widest pl-1">Asset</label>
+              <select 
+                className="w-full bg-ink border border-line p-4 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-sm appearance-none cursor-pointer"
+                value={formData.token}
+                onChange={e => setFormData({ ...formData, token: e.target.value as TransactionToken })}
+              >
+                <option value="CELO">CELO (Native)</option>
+                <option value="cUSD">cUSD (Celo Dollar)</option>
+                <option value="cEUR">cEUR (Celo Euro)</option>
+                <option value="USDT">USDT (Tether Celo)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+             <label className="block text-[10px] uppercase text-muted font-bold mb-2 tracking-widest pl-1">Recipient Address</label>
+             <input 
+              type="text" 
+              required
+              placeholder="0x..."
+              className="w-full bg-ink border border-line p-4 rounded-lg focus:outline-none focus:border-celo-green/50 font-mono text-xs placeholder:text-gray-700"
+              value={formData.recipient}
+              onChange={e => setFormData({ ...formData, recipient: e.target.value })}
+            />
+            <p className="text-[9px] text-muted mt-2 px-1 uppercase tracking-tighter">AI will audit this address for security before authorization.</p>
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-line/30 flex justify-between items-center text-[10px] uppercase font-bold tracking-widest">
+           <div className="flex flex-col gap-1">
+              <span className="text-muted">Est. Gas Fee</span>
+              <span className="text-celo-green">~0.001 CELO</span>
+           </div>
+           <div className="flex flex-col gap-1 text-right">
+              <span className="text-muted">Settlement Time</span>
+              <span className="text-white">~5 Seconds</span>
+           </div>
+        </div>
+      </div>
+
+      <div className="p-6 bg-surface-bright border-t border-line">
+        <button 
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-celo-green text-ink font-bold py-4 rounded-lg flex items-center justify-center gap-3 hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50 uppercase text-xs tracking-widest"
+        >
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-ink border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              Initialize Analysis
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </button>
+      </div>
+    </motion.form>
+  );
+}
