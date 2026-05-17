@@ -6,10 +6,21 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Bot, Terminal, ShieldCheck, Activity, Info, X, Settings, Wallet, Power, HelpCircle } from "lucide-react";
-import { WagmiProvider, useAccount, useConnect, useDisconnect, useBalance, useSendTransaction, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { WagmiProvider, useAccount, useDisconnect, useBalance, useSendTransaction, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createAppKit, useAppKit } from '@reown/appkit/react';
+import { AppKitButton } from '@reown/appkit/react';
 import { formatUnits, parseEther, isAddress, parseUnits, Address } from "viem";
 import { celo } from "viem/chains";
+// Custom UI components would replace this...
+import { wagmiAdapter, projectId, metadata } from "./wagmi-config";
+
+createAppKit({
+  adapters: [wagmiAdapter],
+  projectId,
+  networks: [celo],
+  metadata,
+});
 
 const TOKEN_ADDRESSES: Record<string, Address> = {
   cUSD: '0x765DE816845861e75A25fCA122bb6898B8B1282a',
@@ -66,7 +77,6 @@ const queryClient = new QueryClient();
 
 function AppContent() {
   const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const { data: balanceData } = useBalance({ address });
   
@@ -121,18 +131,8 @@ function AppContent() {
     return () => unsubscribe();
   }, []);
 
-  // Auto-connect logic...
-  useEffect(() => {
-    if (!isConnected) {
-      const injectedConnector = connectors.find(c => c.type === 'injected');
-      if (injectedConnector) {
-        // Only auto-connect if it's MiniPay to avoid desktop metamask popups on load
-        if (typeof window !== "undefined" && window.ethereum && (window.ethereum as any).isMiniPay) {
-          connect({ connector: injectedConnector });
-        }
-      }
-    }
-  }, [connectors, connect, isConnected]);
+  // Auto-connect logic removed for AppKit
+
 
   const [profile, setProfile] = useState<UserProfile>({
     monthly_budget: 1200,
@@ -333,7 +333,7 @@ function AppContent() {
       }
     } catch (e: any) {
       console.error("Login error", e);
-      if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || e.code === 'auth/internal-error') {
+      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || e.code === 'auth/internal-error') {
         addLog("[AUTH] Popup failed/blocked. Attempting Redirect...");
         try {
           await signInWithRedirect(auth, provider);
@@ -767,19 +767,10 @@ function AppContent() {
                    <button 
                     key={connector.uid}
                     onClick={() => {
-                      addLog(`[WALLET] Attempting to connect to ${connector.name}...`);
+                      addLog(`[WALLET] Connecting to ${connector.name}...`);
                       connect({ connector }, {
-                        onSuccess: (data) => addLog(`[WALLET] Successfully connected to ${connector.name}. Address: ${data.accounts[0]}`),
-                        onError: (error) => {
-                          addLog(`[WALLET] Connection failed: ${error.message}`);
-                          // Fallback attempt: try to request accounts via window.ethereum directly if wagmi fails
-                          if (typeof window !== "undefined" && (window as any).ethereum) {
-                            addLog(`[WALLET] Falling back to direct window.ethereum request...`);
-                            (window as any).ethereum.request({ method: 'eth_requestAccounts' })
-                              .then(() => addLog(`[WALLET] Successfully triggered connection directly`))
-                              .catch((e: any) => addLog(`[WALLET] Direct connect failed: ${e.message}`));
-                          }
-                        }
+                        onSuccess: () => addLog(`[WALLET] Successfully connected to ${connector.name}`),
+                        onError: (error) => addLog(`[WALLET] Error: ${error.message}`)
                       });
                     }}
                     type="button"
