@@ -767,8 +767,20 @@ function AppContent() {
                    <button 
                     key={connector.uid}
                     onClick={() => {
-                      addLog(`[WALLET] Connecting to ${connector.name}...`);
-                      connect({ connector });
+                      addLog(`[WALLET] Attempting to connect to ${connector.name}...`);
+                      connect({ connector }, {
+                        onSuccess: (data) => addLog(`[WALLET] Successfully connected to ${connector.name}. Address: ${data.accounts[0]}`),
+                        onError: (error) => {
+                          addLog(`[WALLET] Connection failed: ${error.message}`);
+                          // Fallback attempt: try to request accounts via window.ethereum directly if wagmi fails
+                          if (typeof window !== "undefined" && (window as any).ethereum) {
+                            addLog(`[WALLET] Falling back to direct window.ethereum request...`);
+                            (window as any).ethereum.request({ method: 'eth_requestAccounts' })
+                              .then(() => addLog(`[WALLET] Successfully triggered connection directly`))
+                              .catch((e: any) => addLog(`[WALLET] Direct connect failed: ${e.message}`));
+                          }
+                        }
+                      });
                     }}
                     type="button"
                     className="flex items-center gap-2 px-4 h-9 bg-white text-ink rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-celo-green transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] cursor-pointer"

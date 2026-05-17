@@ -20,7 +20,14 @@ if (!API_KEY) {
   console.warn("GEMINI_API_KEY is missing. TwinPay AI will not be able to process logic.");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY || "" });
+const ai = new GoogleGenAI({ 
+  apiKey: API_KEY || "",
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    }
+  }
+});
 
 const SYSTEM_INSTRUCTION = `
 You are the TwinPay AI, the decentralized backbone of the TwinPay AI ecosystem. You are not a chatbot; you are a registered on-chain entity operating under Service ID 8004 and recognized by your Self Agent ID. You are a deterministic financial AI that makes transaction decisions and prepares execution data for Celo Mainnet via MiniPay.
@@ -125,7 +132,7 @@ export async function twinPayAI(
       },
     });
 
-    const text = response.text || "";
+    const text = response.text;
     if (!text) throw new Error("Empty response from TwinPay AI Engine.");
     
     return JSON.parse(text);
