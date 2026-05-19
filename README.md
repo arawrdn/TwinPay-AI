@@ -1,4 +1,4 @@
-# TwinPay AI // Agentic Payments for Celo
+# TwinPay AI
 
 TwinPay AI is a cognitive abstraction layer for the Celo blockchain. It translates natural human intent into secure, atomic blockchain operations, specifically designed for mobile-first interactions via the MiniPay wallet.
 
