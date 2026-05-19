@@ -38,13 +38,6 @@ Most blockchain interfaces require users to understand hex addresses, gas fees, 
    npm run dev
    ```
 
-## 🔐 Security Note
-If you are deploying this to a public repository, you might receive a **GitHub Secret Scanning** alert for the Firebase API key. To resolve this:
-
-1. **In Google AI Studio:** Go to Settings -> Secrets.
-2. **Add a new secret:** Name it `VITE_FIREBASE_CONFIG`.
-3. **Value:** Copy the entire JSON content from `firebase-applet-config.json` into this secret.
-4. **Outcome:** The app will now read this configuration from environment variables at runtime, and you can safely delete or ignore the hardcoded config in public repositories.
 
 ## 📄 License
 This project is licensed under the MIT License.
